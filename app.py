@@ -174,7 +174,7 @@ if uploaded_file:
 
                 # IMPROVED TIMESTAMP EXTRACTION
                 time_match = re.search(
-                    r'\[(\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2})\s+([+-]\d{4})\]',
+                    r'\[(\d{2}[-/][A-Za-z]{3}[-/]\d{4}:\d{2}:\d{2}:\d{2})\s+([+-]\d{4})\]'
                     log
                 )
 
