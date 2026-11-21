@@ -47,7 +47,8 @@ if uploaded_file:
             if any(p.lower() in log.lower() for p in signatures):
                 severity = "HIGH" if name in ["SQL Injection", "XSS"] else "MEDIUM"
                 attacks.append((name, severity, log))
-                                time_match = re.search(r'\[(.*?)\]', log)
+
+                time_match = re.search(r'\[(.*?)\]', log)
 
                 if time_match:
                     try:
@@ -60,9 +61,12 @@ if uploaded_file:
                         )
                     except ValueError:
                         pass
+
                 break
 
-    suspicious = [ip for ip, count in failed_ips.items() if count >= 3]
+    suspicious = [
+        ip for ip, count in failed_ips.items() if count >= 3
+    ]
 
     high = sum(1 for a in attacks if a[1] == "HIGH")
     medium = sum(1 for a in attacks if a[1] == "MEDIUM")
@@ -76,11 +80,13 @@ if uploaded_file:
     c4.metric("Detected Attacks", len(attacks))
 
     st.subheader("Attack Severity")
+
     c5, c6 = st.columns(2)
     c5.metric("HIGH Severity", high)
     c6.metric("MEDIUM Severity", medium)
 
     st.subheader("Detected Attacks")
+
     if attacks:
         for name, severity, log in attacks:
             if severity == "HIGH":
@@ -90,8 +96,7 @@ if uploaded_file:
     else:
         st.success("No attacks detected")
 
-    st.subheader("Security Charts")
-        st.subheader("Attacks Per Hour")
+    st.subheader("Attacks Per Hour")
 
     if attack_times:
         time_counts = {}
@@ -108,10 +113,11 @@ if uploaded_file:
         ax.set_xlabel("Time")
         ax.set_ylabel("Number of Attacks")
         ax.tick_params(axis="x", rotation=45)
-
         st.pyplot(fig)
     else:
         st.info("No timestamped attacks found")
+
+    st.subheader("Security Charts")
 
     col1, col2 = st.columns(2)
 
