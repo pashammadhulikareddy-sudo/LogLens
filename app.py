@@ -1,13 +1,40 @@
-import re
-import requests
-import ipaddress
 
 import streamlit as st
 import matplotlib.pyplot as plt
 from datetime import datetime
 import re
+import requests
+import ipaddress
 
 st.set_page_config(page_title="LogLens", page_icon="🔐", layout="wide")
+
+
+def get_ip_location(ip):
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+
+        if not ip_obj.is_global:
+            return "Private IP - Location not available"
+
+        response = requests.get(
+            f"https://ipwho.is/{ip}",
+            timeout=5
+        )
+
+        data = response.json()
+
+        if data.get("success"):
+            return (
+                f"Country: {data.get('country', 'Unknown')} | "
+                f"City: {data.get('city', 'Unknown')} | "
+                f"Region: {data.get('region', 'Unknown')}"
+            )
+
+        return "Location not available"
+
+    except Exception:
+        return "GeoIP lookup failed"
+
 
 st.title("🔐 LOGLENS")
 st.subheader("Security Log Analysis Dashboard")
@@ -16,7 +43,9 @@ st.write("Upload Apache, Nginx or sample security logs.")
 uploaded_file = st.file_uploader("Upload Log File", type=["txt", "log"])
 
 if uploaded_file:
-    logs = uploaded_file.getvalue().decode("utf-8", errors="ignore").splitlines()
+    logs = uploaded_file.getvalue().decode(
+        "utf-8", errors="ignore"
+    ).splitlines()
 
     successful = 0
     failed = 0
@@ -41,6 +70,7 @@ if uploaded_file:
 
             if status.startswith("2"):
                 successful += 1
+
             elif status.startswith(("4", "5")):
                 failed += 1
                 ip = log.split()[0]
@@ -48,7 +78,12 @@ if uploaded_file:
 
         for name, signatures in patterns.items():
             if any(p.lower() in log.lower() for p in signatures):
-                severity = "HIGH" if name in ["SQL Injection", "XSS"] else "MEDIUM"
+                severity = (
+                    "HIGH"
+                    if name in ["SQL Injection", "XSS"]
+                    else "MEDIUM"
+                )
+
                 attacks.append((name, severity, log))
 
                 time_match = re.search(r'\[(.*?)\]', log)
@@ -59,9 +94,11 @@ if uploaded_file:
                             time_match.group(1),
                             "%d/%b/%Y:%H:%M:%S %z"
                         )
+
                         attack_times.append(
                             attack_time.strftime("%Y-%m-%d %H:00")
                         )
+
                     except ValueError:
                         pass
 
@@ -77,6 +114,7 @@ if uploaded_file:
     st.header("Security Overview")
 
     c1, c2, c3, c4 = st.columns(4)
+
     c1.metric("Total Logs", len(logs))
     c2.metric("Successful Requests", successful)
     c3.metric("Failed Requests", failed)
@@ -85,6 +123,7 @@ if uploaded_file:
     st.subheader("Attack Severity")
 
     c5, c6 = st.columns(2)
+
     c5.metric("HIGH Severity", high)
     c6.metric("MEDIUM Severity", medium)
 
@@ -111,11 +150,13 @@ if uploaded_file:
         counts = [time_counts[t] for t in times]
 
         fig, ax = plt.subplots()
+
         ax.bar(times, counts)
         ax.set_title("Cyber Attacks Per Hour")
         ax.set_xlabel("Time")
         ax.set_ylabel("Number of Attacks")
         ax.tick_params(axis="x", rotation=45)
+
         st.pyplot(fig)
     else:
         st.info("No timestamped attacks found")
@@ -126,17 +167,21 @@ if uploaded_file:
 
     with col1:
         fig, ax = plt.subplots()
+
         ax.bar(
             ["Successful", "Failed"],
             [successful, failed],
             color=["#2ecc71", "#e74c3c"]
         )
+
         ax.set_title("Request Status")
         ax.set_ylabel("Number of Requests")
+
         st.pyplot(fig)
 
     with col2:
         fig, ax = plt.subplots()
+
         ax.bar(
             ["SQL Injection", "XSS", "Directory Traversal"],
             [
@@ -146,9 +191,11 @@ if uploaded_file:
             ],
             color=["#e74c3c", "#9b59b6", "#f39c12"]
         )
+
         ax.set_title("Detected Attack Types")
         ax.set_ylabel("Number of Attacks")
         ax.tick_params(axis="x", rotation=15)
+
         st.pyplot(fig)
 
     st.subheader("HTTP Status Codes")
@@ -160,6 +207,22 @@ if uploaded_file:
     if suspicious:
         for ip in suspicious:
             st.error(f"Possible Brute Force Attack from IP: {ip}")
+
+    st.subheader("🌍 GeoIP - Attacker Location")
+
+    attacker_ips = list(dict.fromkeys(
+        [log.split()[0] for name, severity, log in attacks]
+        + suspicious
+    ))
+
+    if attacker_ips:
+        for ip in attacker_ips:
+            st.write(f"**IP Address:** {ip}")
+            location = get_ip_location(ip)
+            st.write(f"**Location:** {location}")
+            st.divider()
+    else:
+        st.info("No attacker IP addresses found")
 
     report = f"""LOGLENS SECURITY REPORT
 Generated: {datetime.now()}
