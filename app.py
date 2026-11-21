@@ -112,6 +112,9 @@ if uploaded_file:
 
     st.subheader("Suspicious IP Addresses")
     st.write(suspicious if suspicious else "None")
+    if suspicious:
+    for ip in suspicious:
+        st.error(f"🚨 Possible Brute Force Attack from IP: {ip}")
 
     report = f"""LOGLENS SECURITY REPORT
 Generated: {datetime.now()}
