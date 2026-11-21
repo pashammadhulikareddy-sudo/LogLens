@@ -198,7 +198,25 @@ if uploaded_file:
     c2.metric("Successful Requests", successful)
     c3.metric("Failed Requests", failed)
     c4.metric("Detected Attacks", len(attacks))
+    st.subheader("⚡ Performance Analysis")
 
+    col5, col6 = st.columns(2)
+
+    col5.metric(
+        "Processing Time",
+        f"{processing_time:.4f} seconds"
+    )
+
+    logs_per_second = (
+        total_logs / processing_time
+        if processing_time > 0
+        else 0
+    )
+
+    col6.metric(
+        "Logs Processed Per Second",
+        f"{logs_per_second:.2f}"
+    )
     st.subheader("Attack Severity")
 
     c5, c6 = st.columns(2)
