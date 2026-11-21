@@ -43,9 +43,7 @@ st.write("Upload Apache, Nginx or sample security logs.")
 uploaded_file = st.file_uploader("Upload Log File", type=["txt", "log"])
 
 if uploaded_file:
-    logs = uploaded_file.getvalue().decode(
-        "utf-8", errors="ignore"
-    ).splitlines()
+    total_logs = 0
 
     successful = 0
     failed = 0
