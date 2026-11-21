@@ -91,6 +91,27 @@ if uploaded_file:
         st.success("No attacks detected")
 
     st.subheader("Security Charts")
+        st.subheader("Attacks Per Hour")
+
+    if attack_times:
+        time_counts = {}
+
+        for t in attack_times:
+            time_counts[t] = time_counts.get(t, 0) + 1
+
+        times = sorted(time_counts.keys())
+        counts = [time_counts[t] for t in times]
+
+        fig, ax = plt.subplots()
+        ax.bar(times, counts)
+        ax.set_title("Cyber Attacks Per Hour")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Number of Attacks")
+        ax.tick_params(axis="x", rotation=45)
+
+        st.pyplot(fig)
+    else:
+        st.info("No timestamped attacks found")
 
     col1, col2 = st.columns(2)
 
