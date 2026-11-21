@@ -37,7 +37,7 @@ if uploaded_file:
 
             if status.startswith("2"):
                 successful += 1
-            elif status in ["401", "403"]:
+            elif status.startswith(("4", "5")):
                 failed += 1
                 ip = log.split()[0]
                 failed_ips[ip] = failed_ips.get(ip, 0) + 1
