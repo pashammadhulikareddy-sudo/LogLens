@@ -111,12 +111,15 @@ if uploaded_file:
     st.write(status_codes if status_codes else "No HTTP status codes found")
 
    st.subheader("Suspicious IP Addresses")
+    st.subheader("Suspicious IP Addresses")
+    st.write(suspicious if suspicious else "None")
 
-st.write(suspicious if suspicious else "None")
+    if suspicious:
+        for ip in suspicious:
+            st.error(f"Possible Brute Force Attack from IP: {ip}")
 
-if suspicious:
-    for ip in suspicious:
-        st.error(f"Possible Brute Force Attack from IP: {ip}")
+    report = f"""LOGLENS SECURITY REPORT
+Generated: {datetime.now()}
 
     report = f"""LOGLENS SECURITY REPORT
 Generated: {datetime.now()}
