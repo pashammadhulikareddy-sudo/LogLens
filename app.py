@@ -27,6 +27,7 @@ if uploaded_file:
     }
 
     attacks = []
+    attack_times = []
 
     for log in logs:
         match = re.search(r'"[^"]+"\s+(\d{3})', log)
