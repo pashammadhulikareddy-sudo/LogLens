@@ -51,7 +51,7 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file:
-
+    start_time = time.time()
     successful = 0
     failed = 0
     total_logs = 0
