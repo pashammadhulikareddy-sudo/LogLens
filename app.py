@@ -6,7 +6,11 @@ import re
 import requests
 import ipaddress
 
-st.set_page_config(page_title="LogLens", page_icon="🔐", layout="wide")
+st.set_page_config(
+    page_title="LogLens",
+    page_icon="🔐",
+    layout="wide"
+)
 
 
 def get_ip_location(ip):
@@ -40,53 +44,99 @@ st.title("🔐 LOGLENS")
 st.subheader("Security Log Analysis Dashboard")
 st.write("Upload Apache, Nginx or sample security logs.")
 
-uploaded_file = st.file_uploader("Upload Log File", type=["txt", "log"])
+uploaded_file = st.file_uploader(
+    "Upload Log File",
+    type=["txt", "log"]
+)
 
 if uploaded_file:
-    logs = uploaded_file.getvalue().decode(
-    "utf-8", errors="ignore"
-).splitlines()
 
     successful = 0
     failed = 0
+    total_logs = 0
+
     failed_ips = {}
     status_codes = {}
 
     patterns = {
         "SQL Injection": ["' OR 1=1", "UNION SELECT"],
         "XSS": ["<script>", "javascript:"],
-        "Directory Traversal": ["../", "../../etc/passwd"]
+        "Directory Traversal": [
+            "../",
+            "../../etc/passwd"
+        ]
     }
 
     attacks = []
     attack_times = []
 
-    for log in logs:
-        match = re.search(r'"[^"]+"\s+(\d{3})', log)
+    # Process logs one line at a time
+    uploaded_file.seek(0)
+
+    progress_text = st.empty()
+    progress_bar = st.progress(0)
+
+    file_size = uploaded_file.size
+
+    for raw_line in uploaded_file:
+
+        log = raw_line.decode(
+            "utf-8",
+            errors="ignore"
+        ).strip()
+
+        if not log:
+            continue
+
+        total_logs += 1
+
+        # HTTP status code analysis
+        match = re.search(
+            r'"[^"]+"\s+(\d{3})',
+            log
+        )
 
         if match:
             status = match.group(1)
-            status_codes[status] = status_codes.get(status, 0) + 1
+
+            status_codes[status] = (
+                status_codes.get(status, 0) + 1
+            )
 
             if status.startswith("2"):
                 successful += 1
 
             elif status.startswith(("4", "5")):
                 failed += 1
-                ip = log.split()[0]
-                failed_ips[ip] = failed_ips.get(ip, 0) + 1
 
+                ip = log.split()[0]
+
+                failed_ips[ip] = (
+                    failed_ips.get(ip, 0) + 1
+                )
+
+        # Attack detection
         for name, signatures in patterns.items():
-            if any(p.lower() in log.lower() for p in signatures):
+
+            if any(
+                pattern.lower() in log.lower()
+                for pattern in signatures
+            ):
+
                 severity = (
                     "HIGH"
                     if name in ["SQL Injection", "XSS"]
                     else "MEDIUM"
                 )
 
-                attacks.append((name, severity, log))
+                attacks.append(
+                    (name, severity, log)
+                )
 
-                time_match = re.search(r'\[(.*?)\]', log)
+                time_match = re.search(
+                    r'\[(.*?)\]',
+                    log
+                )
 
                 if time_match:
                     try:
@@ -96,7 +146,9 @@ if uploaded_file:
                         )
 
                         attack_times.append(
-                            attack_time.strftime("%Y-%m-%d %H:00")
+                            attack_time.strftime(
+                                "%Y-%m-%d %H:00"
+                            )
                         )
 
                     except ValueError:
@@ -104,18 +156,43 @@ if uploaded_file:
 
                 break
 
+        # Update progress
+        if file_size > 0:
+            progress = min(
+                uploaded_file.tell() / file_size,
+                1.0
+            )
+
+            progress_bar.progress(progress)
+
+    progress_text.success(
+        "Log file processing completed!"
+    )
+
+    progress_bar.empty()
+
+    # Brute force detection
     suspicious = [
-        ip for ip, count in failed_ips.items() if count >= 3
+        ip for ip, count in failed_ips.items()
+        if count >= 3
     ]
 
-    high = sum(1 for a in attacks if a[1] == "HIGH")
-    medium = sum(1 for a in attacks if a[1] == "MEDIUM")
+    high = sum(
+        1 for attack in attacks
+        if attack[1] == "HIGH"
+    )
 
+    medium = sum(
+        1 for attack in attacks
+        if attack[1] == "MEDIUM"
+    )
+
+    # Security overview
     st.header("Security Overview")
 
     c1, c2, c3, c4 = st.columns(4)
 
-    c1.metric("Total Logs", len(logs))
+    c1.metric("Total Logs", total_logs)
     c2.metric("Successful Requests", successful)
     c3.metric("Failed Requests", failed)
     c4.metric("Detected Attacks", len(attacks))
@@ -127,45 +204,68 @@ if uploaded_file:
     c5.metric("HIGH Severity", high)
     c6.metric("MEDIUM Severity", medium)
 
+    # Detected attacks
     st.subheader("Detected Attacks")
 
     if attacks:
         for name, severity, log in attacks:
+
             if severity == "HIGH":
-                st.error(f"{name} | {severity}\n\n{log}")
+                st.error(
+                    f"{name} | {severity}\n\n{log}"
+                )
             else:
-                st.warning(f"{name} | {severity}\n\n{log}")
+                st.warning(
+                    f"{name} | {severity}\n\n{log}"
+                )
     else:
         st.success("No attacks detected")
 
+    # Attacks per hour
     st.subheader("Attacks Per Hour")
 
     if attack_times:
+
         time_counts = {}
 
-        for t in attack_times:
-            time_counts[t] = time_counts.get(t, 0) + 1
+        for time in attack_times:
+            time_counts[time] = (
+                time_counts.get(time, 0) + 1
+            )
 
         times = sorted(time_counts.keys())
-        counts = [time_counts[t] for t in times]
+
+        counts = [
+            time_counts[time]
+            for time in times
+        ]
 
         fig, ax = plt.subplots()
 
         ax.bar(times, counts)
+
         ax.set_title("Cyber Attacks Per Hour")
         ax.set_xlabel("Time")
         ax.set_ylabel("Number of Attacks")
-        ax.tick_params(axis="x", rotation=45)
+
+        ax.tick_params(
+            axis="x",
+            rotation=45
+        )
 
         st.pyplot(fig)
+        plt.close(fig)
+
     else:
         st.info("No timestamped attacks found")
 
+    # Security charts
     st.subheader("Security Charts")
 
     col1, col2 = st.columns(2)
 
     with col1:
+
         fig, ax = plt.subplots()
 
         ax.bar(
@@ -178,60 +278,112 @@ if uploaded_file:
         ax.set_ylabel("Number of Requests")
 
         st.pyplot(fig)
+        plt.close(fig)
 
     with col2:
+
         fig, ax = plt.subplots()
 
         ax.bar(
-            ["SQL Injection", "XSS", "Directory Traversal"],
             [
-                sum(1 for a in attacks if a[0] == "SQL Injection"),
-                sum(1 for a in attacks if a[0] == "XSS"),
-                sum(1 for a in attacks if a[0] == "Directory Traversal")
+                "SQL Injection",
+                "XSS",
+                "Directory Traversal"
             ],
-            color=["#e74c3c", "#9b59b6", "#f39c12"]
+            [
+                sum(
+                    1 for a in attacks
+                    if a[0] == "SQL Injection"
+                ),
+                sum(
+                    1 for a in attacks
+                    if a[0] == "XSS"
+                ),
+                sum(
+                    1 for a in attacks
+                    if a[0] == "Directory Traversal"
+                )
+            ],
+            color=[
+                "#e74c3c",
+                "#9b59b6",
+                "#f39c12"
+            ]
         )
 
         ax.set_title("Detected Attack Types")
         ax.set_ylabel("Number of Attacks")
-        ax.tick_params(axis="x", rotation=15)
+
+        ax.tick_params(
+            axis="x",
+            rotation=15
+        )
 
         st.pyplot(fig)
+        plt.close(fig)
 
+    # HTTP status codes
     st.subheader("HTTP Status Codes")
-    st.write(status_codes if status_codes else "No HTTP status codes found")
 
+    st.write(
+        status_codes
+        if status_codes
+        else "No HTTP status codes found"
+    )
+
+    # Suspicious IP addresses
     st.subheader("Suspicious IP Addresses")
-    st.write(suspicious if suspicious else "None")
+
+    st.write(
+        suspicious
+        if suspicious
+        else "None"
+    )
 
     if suspicious:
         for ip in suspicious:
-            st.error(f"Possible Brute Force Attack from IP: {ip}")
+            st.error(
+                f"Possible Brute Force Attack from IP: {ip}"
+            )
 
+    # GeoIP
     st.subheader("🌍 GeoIP - Attacker Location")
 
     attacker_ips = list(dict.fromkeys(
-        [log.split()[0] for name, severity, log in attacks]
-        + suspicious
+        [
+            log.split()[0]
+            for name, severity, log in attacks
+        ] + suspicious
     ))
 
     if attacker_ips:
+
         for ip in attacker_ips:
+
             st.write(f"**IP Address:** {ip}")
+
             location = get_ip_location(ip)
+
             st.write(f"**Location:** {location}")
+
             st.divider()
+
     else:
         st.info("No attacker IP addresses found")
 
+    # Downloadable report
     report = f"""LOGLENS SECURITY REPORT
+
 Generated: {datetime.now()}
-Total Logs: {len(logs)}
+
+Total Logs: {total_logs}
 Successful Requests: {successful}
 Failed Requests: {failed}
 Detected Attacks: {len(attacks)}
+
 HIGH Severity: {high}
 MEDIUM Severity: {medium}
+
 HTTP Status Codes: {status_codes}
 Suspicious IPs: {suspicious}
 
@@ -239,7 +391,8 @@ DETECTED ATTACKS:
 """
 
     report += "\n".join(
-        f"{a} | {s} | {log}" for a, s, log in attacks
+        f"{name} | {severity} | {log}"
+        for name, severity, log in attacks
     )
 
     st.download_button(
