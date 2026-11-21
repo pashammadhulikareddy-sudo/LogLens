@@ -47,6 +47,19 @@ if uploaded_file:
             if any(p.lower() in log.lower() for p in signatures):
                 severity = "HIGH" if name in ["SQL Injection", "XSS"] else "MEDIUM"
                 attacks.append((name, severity, log))
+                                time_match = re.search(r'\[(.*?)\]', log)
+
+                if time_match:
+                    try:
+                        attack_time = datetime.strptime(
+                            time_match.group(1),
+                            "%d/%b/%Y:%H:%M:%S %z"
+                        )
+                        attack_times.append(
+                            attack_time.strftime("%Y-%m-%d %H:00")
+                        )
+                    except ValueError:
+                        pass
                 break
 
     suspicious = [ip for ip, count in failed_ips.items() if count >= 3]
