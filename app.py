@@ -1,18 +1,42 @@
-
 import streamlit as st
 import matplotlib.pyplot as plt
-import time
 from datetime import datetime
 import re
 import requests
 import ipaddress
+import time
 
 st.set_page_config(
-    st.markdown("""
+    page_title="LogLens",
+    page_icon="🔐",
+    layout="wide"
+)
+
+st.markdown("""
 <style>
 .stApp {
     background-color: #0e1117;
     color: #ffffff;
+}
+
+[data-testid="stMetric"] {
+    background-color: #1c2333;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #303b50;
+}
+
+h1, h2, h3 {
+    color: #00d4ff;
+}
+
+.stButton button {
+    background-color: #0077b6;
+    color: white;
+    border-radius: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
 }
 
 [data-testid="stMetric"] {
