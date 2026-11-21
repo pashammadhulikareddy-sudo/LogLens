@@ -165,7 +165,8 @@ if uploaded_file:
             )
 
             progress_bar.progress(progress)
-
+    end_time = time.time()
+    processing_time = end_time - start_time
     progress_text.success(
         "Log file processing completed!"
     )
