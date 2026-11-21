@@ -19,7 +19,7 @@ if uploaded_file:
     failed = 0
     failed_ips = {}
     status_codes = {}
-    
+
     patterns = {
         "SQL Injection": ["' OR 1=1", "UNION SELECT"],
         "XSS": ["<script>", "javascript:"],
@@ -110,16 +110,12 @@ if uploaded_file:
     st.subheader("HTTP Status Codes")
     st.write(status_codes if status_codes else "No HTTP status codes found")
 
-   st.subheader("Suspicious IP Addresses")
     st.subheader("Suspicious IP Addresses")
     st.write(suspicious if suspicious else "None")
 
     if suspicious:
         for ip in suspicious:
             st.error(f"Possible Brute Force Attack from IP: {ip}")
-
-    report = f"""LOGLENS SECURITY REPORT
-Generated: {datetime.now()}
 
     report = f"""LOGLENS SECURITY REPORT
 Generated: {datetime.now()}
@@ -134,6 +130,7 @@ Suspicious IPs: {suspicious}
 
 DETECTED ATTACKS:
 """
+
     report += "\n".join(
         f"{a} | {s} | {log}" for a, s, log in attacks
     )
